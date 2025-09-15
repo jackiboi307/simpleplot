@@ -139,21 +139,16 @@ class Plotter:
 
     def pos_of(self, pos):
         try:
-            # return (
-            #     screen_size[0] // 2 - self.x_mid + pos[0] * screen_size[0] / self.x_amount,
-            #     screen_size[1] // 2 - self.y_mid - pos[1] * screen_size[1] / self.y_amount
-            # )
-
             x, y = pos
+            x = (x - self.x_min) / abs(self.x_min - self.x_max) * self.screen_size[0]
+            y = self.screen_size[1] - (y - self.y_min) / \
+                abs(self.y_min - self.y_max) * self.screen_size[1]
 
-            return (
-                (x - self.x_min) / abs(self.x_min - self.x_max) * self.screen_size[0],
-                self.screen_size[1] - (y - self.y_min) /
-                    abs(self.y_min - self.y_max) * self.screen_size[1],
-            )
+            return (x, y) if type(x) is not complex and type(y) is not complex else \
+                self.pos_of((0, 0))
 
         except ZeroDivisionError:
-            return (0, 0)
+            return self.pos_of((0, 0))
 
 
     def draw_x(self, x, color=None):

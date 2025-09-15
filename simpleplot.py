@@ -36,16 +36,28 @@ def default(value, default_value):
     return value if value else default_value
 
 
-def frange(start, end, num):
-    for i in range(num - 1):
-        yield start + (end - start) / (num - 1) * i
+def frange(start, end, step):
+    res = int((end - start) / step) + 1
+    for i in frange_res(start, end, res):
+        yield i
+
+
+def frange_res(start, end, res):
+    for i in range(res - 1):
+        yield start + (end - start) / (res - 1) * i
 
     yield end
 
 
+def round_step(x, prec):
+    # prec is a value like 10, 1, 0.1
+    return int(x / prec) * prec
+
+
 class Plotter:
     def __init__(self):
-        self.scale = 20
+        self.scalex = 20
+        self.scaley = 20
         self.mid = (0, 0)
         self.color = Color()
 
@@ -87,7 +99,8 @@ class Plotter:
                 return False
 
             elif event.type == pygame.MOUSEWHEEL:
-                self.scale = self.scale * (1 + event.y * self.mouse_scroll_scale)
+                self.scalex = self.scalex * (1 + event.y * self.mouse_scroll_scale)
+                self.scaley = self.scaley * (1 + event.y * self.mouse_scroll_scale)
                 # plot_ui.scale = max(int(1 / mouse_scroll_scale), min(1000, plot_ui.scale))
                 # plot_ui.scale = max(0.1, plot_ui.scale)
                 # plot_ui.scale += -0.1 if event.flipped else 0.1
@@ -98,15 +111,18 @@ class Plotter:
                 self.orig_mid = self.mid
 
             elif event.type == pygame.VIDEORESIZE:
+                orig = self.screen_size
                 self.screen_size = self.screen.get_size()
+                self.scalex *= self.screen_size[0] / orig[0]
+                self.scaley *= self.screen_size[1] / orig[1]
 
         if pygame.mouse.get_pressed()[0]:
             mx, my = pygame.mouse.get_pos()
             self.mid = (
                 self.orig_mid[0] + (self.orig_mouse[0] - mx)
-                    * self.scale / self.screen_size[0],
+                    * self.scalex / self.screen_size[0],
                 self.orig_mid[1] - (self.orig_mouse[1] - my)
-                    * self.scale / self.screen_size[1]
+                    * self.scaley / self.screen_size[1]
             )
 
         return True
@@ -122,19 +138,19 @@ class Plotter:
 
     @property
     def x_min(self):
-        return self.x_mid - self.scale / 2
+        return self.x_mid - self.scalex / 2
 
     @property
     def x_max(self):
-        return self.x_mid + self.scale / 2
+        return self.x_mid + self.scalex / 2
 
     @property
     def y_min(self):
-        return self.y_mid - self.scale / 2
+        return self.y_mid - self.scaley / 2
 
     @property
     def y_max(self):
-        return self.y_mid + self.scale / 2
+        return self.y_mid + self.scaley / 2
 
 
     def pos_of(self, pos):
@@ -163,29 +179,32 @@ class Plotter:
 
 
     def draw_grid(self):
-        # res = 0
+        try:
+            # why is this so hard?
 
-        # def f(gen):
-        #     zero = False
-        #     for i in gen:
-        #         if i == 0:
-        #             zero = True
-        #         yield i
-        #     if not zero:
-        #         yield 0
+            ystep = 10 ** int(log10(self.scaley / 2))
+            xstep = 10 ** int(log10(self.scalex / 2))
 
-        # for y in f(frange(self.y_min, self.y_max, res)):
-            # print(y, end=", ")
-            # color = self.color.fg_1 if y == 0 else color.fg_3
-            # pygame.draw.line(surface, color,
-            #     self.pos_of((self.x_min, y)), self.pos_of((self.x_max, y)))
+            if ystep >= 1: 
+                for y in frange(
+                        round_step(self.y_min, ystep),
+                        round_step(self.y_max, ystep),
+                        ystep):
+                    color = self.color.fg_1 if y == 0 else self.color.fg_3
+                    pygame.draw.line(self.screen, color,
+                        self.pos_of((self.x_min, y)), self.pos_of((self.x_max, y)))
 
-        # print()
+            if xstep >= 1:
+                for x in frange(
+                        round_step(self.x_min, xstep),
+                        round_step(self.x_max, xstep),
+                        xstep):
+                    color = self.color.fg_1 if x == 0 else self.color.fg_3
+                    pygame.draw.line(self.screen, color,
+                        self.pos_of((x, self.y_min)), self.pos_of((x, self.y_max)))
 
-        # for x in f(frange(self.x_min, self.x_max, res)):
-        #     color = self.color.fg_1 if x == 0 else color.fg_3
-        #     pygame.draw.line(surface, color,
-        #         self.pos_of((x, self.y_min)), self.pos_of((x, self.y_max)))
+        except ValueError:
+            pass
 
         self.draw_x(0, self.color.fg_1)
         self.draw_y(0, self.color.fg_1)
@@ -218,7 +237,7 @@ ymid = {self.y_mid}
         res = 1000
         coords = []
 
-        for x in frange(self.x_min, self.x_max, res):
+        for x in frange_res(self.x_min, self.x_max, res):
             try:
                 coords.append((x, f(x)))
             except ZeroDivisionError:

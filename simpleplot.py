@@ -4,20 +4,36 @@ import time
 from math import *
 
 
-RED     = (255, 0, 0)
-YELLOW  = (255, 255, 0)
-GREEN   = (0, 255, 0)
-CYAN    = (0, 255, 255)
-BLUE    = (0, 0, 255)
-MAGENTA = (255, 0, 255)
+class Color:
+    def __init__(self):
+        self.red     = (255, 0, 0)
+        self.yellow  = (255, 255, 0)
+        self.green   = (0, 255, 0)
+        self.cyan    = (0, 255, 255)
+        self.blue    = (0, 0, 255)
+        self.magenta = (255, 0, 255)
 
-DEFAULT_COLOR = BLUE
+        self.fg_1    = (255, 255, 255)
+        self.fg_2    = (127, 127, 127)
+        self.fg_3    = (63, 63, 63)
 
-FG_1 = (255, 255, 255)
-FG_2 = (127, 127, 127)
-FG_3 = (63, 63, 63)
+        self.bg      = (0, 0, 0)
 
-BG = (0, 0, 0)
+        self.default = self.blue
+
+    @classmethod
+    def invert_color(self, color):
+        return (255 - color[0], 255 - color[1], 255 - color[2])
+
+    def invert(self):
+        self.fg_1 = __class__.invert_color(self.fg_1)
+        self.fg_2 = __class__.invert_color(self.fg_2)
+        self.fg_3 = __class__.invert_color(self.fg_3)
+        self.bg   = __class__.invert_color(self.bg)
+
+
+def default(value, default_value):
+    return value if value else default_value
 
 
 def frange(start, end, num):
@@ -31,6 +47,7 @@ class Plotter:
     def __init__(self):
         self.scale = 20
         self.mid = (0, 0)
+        self.color = Color()
 
 
     def init_graphics(self, default_size=(500, 500)):
@@ -49,10 +66,10 @@ class Plotter:
 
     def running(self):
         crosshair_size = 5
-        pygame.draw.line(self.screen, FG_3,
+        pygame.draw.line(self.screen, self.color.fg_3,
             (self.screen_size[0] // 2 - crosshair_size, self.screen_size[1] // 2),
             (self.screen_size[0] // 2 + crosshair_size, self.screen_size[1] // 2))
-        pygame.draw.line(self.screen, FG_3,
+        pygame.draw.line(self.screen, self.color.fg_3,
             (self.screen_size[0] // 2, self.screen_size[1] // 2 - crosshair_size),
             (self.screen_size[0] // 2, self.screen_size[1] // 2 + crosshair_size))
 
@@ -61,7 +78,7 @@ class Plotter:
 
         # the above stuff should really happen in the end of the game loop
 
-        self.screen.fill(BG)
+        self.screen.fill(self.color.bg)
 
         self.draw_grid()
 
@@ -139,6 +156,17 @@ class Plotter:
             return (0, 0)
 
 
+    def draw_x(self, x, color=None):
+        color = default(color, self.color.fg_2)
+        pygame.draw.line(self.screen, color,
+            self.pos_of((x, self.y_min)), self.pos_of((x, self.y_max)))
+
+    def draw_y(self, y, color=None):
+        color = default(color, self.color.fg_2)
+        pygame.draw.line(self.screen, color,
+            self.pos_of((self.x_min, y)), self.pos_of((self.x_max, y)))
+
+
     def draw_grid(self):
         # res = 0
 
@@ -153,21 +181,19 @@ class Plotter:
 
         # for y in f(frange(self.y_min, self.y_max, res)):
             # print(y, end=", ")
-            # color = FG_1 if y == 0 else FG_3
+            # color = self.color.fg_1 if y == 0 else color.fg_3
             # pygame.draw.line(surface, color,
             #     self.pos_of((self.x_min, y)), self.pos_of((self.x_max, y)))
 
         # print()
 
         # for x in f(frange(self.x_min, self.x_max, res)):
-        #     color = FG_1 if x == 0 else FG_3
+        #     color = self.color.fg_1 if x == 0 else color.fg_3
         #     pygame.draw.line(surface, color,
         #         self.pos_of((x, self.y_min)), self.pos_of((x, self.y_max)))
 
-        pygame.draw.line(self.screen, FG_1,
-            self.pos_of((self.x_min, 0)), self.pos_of((self.x_max, 0)))
-        pygame.draw.line(self.screen, FG_1,
-            self.pos_of((0, self.y_min)), self.pos_of((0, self.y_max)))
+        self.draw_x(0, self.color.fg_1)
+        self.draw_y(0, self.color.fg_1)
 
         for (i, line) in enumerate(f"""
 xmin = {self.x_min:.2f}
@@ -179,15 +205,17 @@ center:
     y = {self.y_mid}
             """.strip().splitlines()):
 
-            s = self.font.render(line, False, FG_2)
+            s = self.font.render(line, False, self.color.fg_2)
             self.screen.blit(s, (10, 10 + i * 0.7 * self.font_size))
 
 
-    def draw_point(self, point, color=DEFAULT_COLOR):
+    def draw_point(self, point, color=None):
+        color = default(color, self.color.default)
         pygame.draw.circle(self.screen, color, self.pos_of(point), 3)
 
 
-    def draw_func(self, f, color=DEFAULT_COLOR):
+    def draw_func(self, f, color=None):
+        color = default(color, self.color.default)
         res = 1000
         coords = []
 

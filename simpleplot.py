@@ -36,13 +36,7 @@ def default(value, default_value):
     return value if value else default_value
 
 
-def frange(start, end, step):
-    res = int((end - start) / step) + 1
-    for i in frange_res(start, end, res):
-        yield i
-
-
-def frange_res(start, end, res):
+def frange(start, end, res):
     for i in range(res - 1):
         yield start + (end - start) / (res - 1) * i
 
@@ -180,28 +174,20 @@ class Plotter:
 
     def draw_grid(self):
         try:
-            # why is this so hard?
-
             ystep = 10 ** int(log10(self.scaley / 2))
             xstep = 10 ** int(log10(self.scalex / 2))
 
-            if ystep >= 1: 
-                for y in frange(
-                        round_step(self.y_min, ystep),
-                        round_step(self.y_max, ystep),
-                        ystep):
-                    color = self.color.fg_1 if y == 0 else self.color.fg_3
-                    pygame.draw.line(self.screen, color,
-                        self.pos_of((self.x_min, y)), self.pos_of((self.x_max, y)))
+            for i in range(int(self.scaley // ystep) + 1):
+                y = round_step(self.y_min, ystep) + ystep * i
+                color = self.color.fg_1 if y == 0 else self.color.fg_3
+                pygame.draw.line(self.screen, color,
+                    self.pos_of((self.x_min, y)), self.pos_of((self.x_max, y)))
 
-            if xstep >= 1:
-                for x in frange(
-                        round_step(self.x_min, xstep),
-                        round_step(self.x_max, xstep),
-                        xstep):
-                    color = self.color.fg_1 if x == 0 else self.color.fg_3
-                    pygame.draw.line(self.screen, color,
-                        self.pos_of((x, self.y_min)), self.pos_of((x, self.y_max)))
+            for i in range(int(self.scalex // xstep) + 1):
+                x = round_step(self.x_min, xstep) + xstep * i
+                color = self.color.fg_1 if x == 0 else self.color.fg_3
+                pygame.draw.line(self.screen, color,
+                    self.pos_of((x, self.y_min)), self.pos_of((x, self.y_max)))
 
         except ValueError:
             pass
@@ -237,7 +223,7 @@ ymid = {self.y_mid}
         res = 1000
         coords = []
 
-        for x in frange_res(self.x_min, self.x_max, res):
+        for x in frange(self.x_min, self.x_max, res):
             try:
                 coords.append((x, f(x)))
             except ZeroDivisionError:

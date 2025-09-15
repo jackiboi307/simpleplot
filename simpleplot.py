@@ -191,17 +191,21 @@ class Plotter:
         self.draw_y(0, self.color.fg_1)
 
         for (i, line) in enumerate(f"""
-xmin = {self.x_min:.2f}
-ymin = {self.y_min:.2f}
-xmax = {self.x_max:.2f}
-ymax = {self.y_max:.2f}
-center:
-    x = {self.x_mid}
-    y = {self.y_mid}
+xmin, xmax = {self.x_min:.2f}, {self.x_max:.2f}
+ymin, ymax = {self.y_min:.2f}, {self.y_max:.2f}
+xmid = {self.x_mid}
+ymid = {self.y_mid}
             """.strip().splitlines()):
 
             s = self.font.render(line, False, self.color.fg_2)
             self.screen.blit(s, (10, 10 + i * 0.7 * self.font_size))
+
+
+    def draw_text(self, text):
+        for (i, line) in enumerate(text.strip().splitlines()):
+            s = self.font.render(line, False, self.color.fg_2)
+            self.screen.blit(s, (10,
+                self.screen_size[1] - 10 - (i + 1) * 0.7 * self.font_size))
 
 
     def draw_point(self, point, color=None):

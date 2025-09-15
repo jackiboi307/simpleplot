@@ -2,7 +2,7 @@ from simpleplot import *
 
 
 def f(x):
-    return x * sin(tan(x ** -1))
+    return x ** 3 * sin(tan(x ** -1))
 
 def rate_of_change(f):
     return lambda x: f(x) - f(x - 1)
@@ -27,4 +27,11 @@ while plotter.running():
 
     plotter.draw_point((1, 1))
     plotter.draw_point((2, 2))
+
+    try:
+        p = (plotter.x_mid, f(plotter.x_mid))
+        plotter.draw_point(p, color.fg_1)
+        plotter.draw_text(f"f(xmid) = {p[1]}")
+    except ZeroDivisionError:
+        pass
 

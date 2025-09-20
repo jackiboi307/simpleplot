@@ -1,5 +1,6 @@
 from simpleplot import *
 from pygame.locals import *
+from math import *
 
 
 def f(x):
